@@ -1,0 +1,14 @@
+[package]
+name = "xash3d-jolt"
+version = "0.1.0"
+edition = "2021"
+authors = ["Xash3D FWGS Contributors"]
+description = "Jolt Physics integration for Xash3D engine in Rust"
+
+[lib]
+name = "xash3d_jolt"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+xash3d-api = { path = "../xash3d-api" }
+oxijolt = { version = "1.1.0" }

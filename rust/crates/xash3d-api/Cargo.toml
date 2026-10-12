@@ -1,0 +1,8 @@
+[package]
+name = "xash3d-api"
+version = "0.1.0"
+edition = "2021"
+authors = ["Xash3D FWGS Contributors"]
+description = "Types, math utilities, and safe abstractions for Xash3D engine"
+
+[dependencies]

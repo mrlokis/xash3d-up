@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include "library.h"
 #include "triangleapi.h"
 #include "ref_common.h"
+#include "rust_jolt_ffi.h"
 
 typedef int (*PHYSICAPI)( int, server_physics_api_t*, physics_interface_t* );
 #if !XASH_DEDICATED
@@ -1712,6 +1713,17 @@ static void SV_Physics_Entity( edict_t *ent )
 		SV_LinkEdict( ent, true );
 	}
 
+	if( ent->v.movetype == MOVETYPE_TOSS || ent->v.movetype == MOVETYPE_BOUNCE || ent->v.movetype == MOVETYPE_STEP )
+	{
+		int ent_idx = NUM_FOR_EDICT( ent );
+		if( xash_rust_jolt_entity_get_transform( ent_idx, ent->v.origin, ent->v.angles ))
+		{
+			xash_rust_jolt_entity_get_velocity( ent_idx, ent->v.velocity );
+			SV_LinkEdict( ent, true );
+			return;
+		}
+	}
+
 	switch( ent->v.movetype )
 	{
 	case MOVETYPE_NONE:
@@ -1779,6 +1791,8 @@ SV_Physics
 */
 void SV_Physics( void )
 {
+	xash_rust_jolt_step( (float)sv.frametime );
+
 	SV_CheckAllEnts ();
 
 	svgame.globals->time = sv.time;

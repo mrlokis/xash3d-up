@@ -1,5 +1,6 @@
 
 #include "gl_local.h"
+#include "gl_pbr.h"
 #if XASH_GL4ES
 #include "gl4es/include/gl4esinit.h"
 #include "gl4es/include/gl4eshint.h"
@@ -41,6 +42,11 @@ CVAR_DEFINE_AUTO( r_ripple_updatetime, "0.05", FCVAR_GLCONFIG, "how fast ripple 
 CVAR_DEFINE_AUTO( r_ripple_spawntime, "0.1", FCVAR_GLCONFIG, "how fast new ripples spawn" );
 CVAR_DEFINE_AUTO( r_large_lightmaps, "0", FCVAR_GLCONFIG|FCVAR_LATCH, "enable larger lightmap atlas textures (might break custom renderer mods)" );
 CVAR_DEFINE_AUTO( r_scene_scale, "1.0", FCVAR_GLCONFIG, "render the 3D scene at this fraction of the window resolution (0.1 to 8.0), HUD is unaffected" );
+CVAR_DEFINE_AUTO( r_pbr, "1", FCVAR_GLCONFIG, "enable physically based rendering (PBR)" );
+CVAR_DEFINE_AUTO( r_realtime_lights, "1", FCVAR_GLCONFIG, "enable realtime dynamic lighting" );
+CVAR_DEFINE_AUTO( r_ssao, "1", FCVAR_GLCONFIG, "enable screen-space ambient occlusion (SSAO)" );
+CVAR_DEFINE_AUTO( r_fxaa, "1", FCVAR_GLCONFIG, "enable FXAA antialiasing" );
+CVAR_DEFINE_AUTO( r_autonormals, "1", FCVAR_GLCONFIG, "auto-generate normal maps for textures without normals" );
 
 
 gl_globals_t	tr;
@@ -1245,6 +1251,11 @@ static void GL_InitCommands( void )
 	gEngfuncs.Cvar_RegisterVariable( &r_vbo_detail );
 	gEngfuncs.Cvar_RegisterVariable( &r_large_lightmaps );
 	gEngfuncs.Cvar_RegisterVariable( &r_scene_scale );
+	gEngfuncs.Cvar_RegisterVariable( &r_pbr );
+	gEngfuncs.Cvar_RegisterVariable( &r_realtime_lights );
+	gEngfuncs.Cvar_RegisterVariable( &r_ssao );
+	gEngfuncs.Cvar_RegisterVariable( &r_fxaa );
+	gEngfuncs.Cvar_RegisterVariable( &r_autonormals );
 
 	gEngfuncs.Cvar_RegisterVariable( &gl_extensions );
 	gEngfuncs.Cvar_RegisterVariable( &gl_texture_nearest );
@@ -1364,6 +1375,7 @@ qboolean R_Init( void )
 	GL_SetDefaults();
 	R_CheckVBO();
 	R_InitImages();
+	GL_PBR_Init();
 	R_StudioInit();
 	R_AliasInit();
 	R_ClearDecals();
@@ -1382,6 +1394,7 @@ void R_Shutdown( void )
 	if( !glw_state.initialized )
 		return;
 
+	GL_PBR_Shutdown();
 	GL_RemoveCommands();
 	GL_FreeRenderTargets();
 	R_ShutdownImages();
@@ -1450,42 +1463,19 @@ void GL_SetupAttributes( int safegl )
 	int context_flags = 0; // REFTODO!!!!!
 	int samples = 0;
 
-#if XASH_GLES
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_PROFILE_MASK, REF_GL_CONTEXT_PROFILE_ES );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_EGL, 1 );
-#if XASH_NANOGL
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 1 );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 1 );
-#else // !XASH_NANOGL
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 2 );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 0 );
-#endif
-
-#elif XASH_GL4ES
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_PROFILE_MASK, REF_GL_CONTEXT_PROFILE_ES );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_EGL, 1 );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 2 );
-	gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 0 );
-#else // GL1.x
 	if( gEngfuncs.Sys_CheckParm( "-glcore" ))
 	{
 		SetBits( context_flags, FCONTEXT_CORE_PROFILE );
-
 		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_PROFILE_MASK, REF_GL_CONTEXT_PROFILE_CORE );
 		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 3 );
 		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 3 );
 	}
 	else
 	{
-		if( !safegl )
-			gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_PROFILE_MASK, REF_GL_CONTEXT_PROFILE_COMPATIBILITY );
-		else
-		{
-			gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 1 );
-			gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 1 );
-		}
+		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_PROFILE_MASK, REF_GL_CONTEXT_PROFILE_COMPATIBILITY );
+		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MAJOR_VERSION, 3 );
+		gEngfuncs.GL_SetAttribute( REF_GL_CONTEXT_MINOR_VERSION, 3 );
 	}
-#endif // XASH_GLES
 
 	if( gEngfuncs.Sys_CheckParm( "-gldebug" ))
 	{

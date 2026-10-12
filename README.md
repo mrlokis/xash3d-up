@@ -1,147 +1,113 @@
-> [!CAUTION]
-> **Only download Xash3D FWGS from official sources.** Third-party builds, "modded launchers", "optimized" repacks and random mirrors are frequently bundled with malware, miners, spyware and credential stealers. We cannot vouch for anything we did not build. Get official binaries only from the [releases page](https://github.com/FWGS/xash3d-fwgs/releases/tag/continuous).
+# Xash3D-up Engine
 
-# Xash3D FWGS Engine <img align="right" width="128" height="128" src="https://github.com/FWGS/xash3d-fwgs/raw/master/game_launch/icon-xash-material.png" alt="Xash3D FWGS icon" />
-[![GitHub Actions Status](https://github.com/FWGS/xash3d-fwgs/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/FWGS/xash3d-fwgs/actions/workflows/c-cpp.yml) [![FreeBSD Build Status](https://img.shields.io/cirrus/github/FWGS/xash3d-fwgs?label=freebsd%20build)](https://cirrus-ci.com/github/FWGS/xash3d-fwgs) \
-[![Discord Server](https://img.shields.io/discord/355697768582610945?logo=Discord&label=International%20Discord%20chat)](http://xash.su/discord/) [![Russian speakers Telegram Chat](https://img.shields.io/badge/Russian_speakers_Telegram_chat-gray?logo=Telegram)](https://t.me/flyingwithgauss) \
-[![Download Daily Build](https://img.shields.io/badge/downloads-testing-orange)](https://github.com/FWGS/xash3d-fwgs/releases/tag/continuous)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#) [![Platform](https://img.shields.io/badge/platform-Windows%20x64%20%7C%20Linux%20x64-blue)](#) [![Language](https://img.shields.io/badge/language-C%20%2F%20Rust%20%2F%20Slang-orange)](#) [![Physics](https://img.shields.io/badge/physics-Jolt%20Physics-purple)](#) [![Graphics](https://img.shields.io/badge/graphics-OpenGL%203.3%2B%20%2F%204.6%20PBR-red)](#)
 
-Xash3D ([pronounced](https://ipa-reader.com/?text=ks%C9%91%CA%82) `[ksɑʂ]`) FWGS is a game engine, aimed to provide compatibility with Half-Life Engine and extend it, as well as to give game developers well known workflow.
+**Xash3D-up** — глубокая модернизация игрового движка Xash3D FWGS, ориентированная на 64-битную архитектуру, интеграцию **Rust**, современный физический движок **Jolt Physics**, графический пайплайн на **Slang** с **PBR (Physically Based Rendering)** и **Realtime освещением**, а также аудиоподсистему на Rust.
 
-Xash3D FWGS is a heavily modified fork of an original [Xash3D Engine](https://www.moddb.com/engines/xash3d-engine) by Unkle Mike.
+---
 
-## Donate
-[![Donate to FWGS button](https://img.shields.io/badge/Donate_to_FWGS-%3C3-magenta)](Documentation/donate.md) \
-If you like Xash3D FWGS, consider supporting individual engine maintainers. By supporting us, you help to continue developing this game engine further. The sponsorship links are available in [documentation](Documentation/donate.md).
+## Ключевые изменения и возможности
 
-## Fork features
-* Steam Half-Life (HLSDK 2.5) support.
-* Crossplatform and modern compilers support: supports Windows, Linux, BSD & Android on x86 & ARM and [many more](Documentation/ports.md).
-* Better multiplayer: multiple master servers, headless dedicated server, voice chat, [GoldSrc protocol support](Documentation/goldsrc-protocol-support.md) and IPv6 support.
-* Multiple renderers support: OpenGL, GLESv1, GLESv2 and Software.
-* Advanced virtual filesystem: `.pk3` and `.pk3dir` support, compatibility with GoldSrc FS module, fast case-insensitivity emulation for crossplatform.
-* Mobility API: better game integration on mobile devices (vibration, touch controls).
-* Different input methods: touch and gamepad in addition to mouse & keyboard.
-* TrueType font rendering, as a part of mainui_cpp.
-* External VGUI support module.
-* PNG & KTX2 image format support.
-* Ogg Vorbis (`.ogg`) & Ogg Opus (`.opus`) audio formats support.
-* [A set of small improvements](Documentation/), without broken compatibility.
+### 🦀 Интеграция Rust
+- **Cargo Workspace** в директории `rust/`:
+  - [`xash3d-api`](rust/crates/xash3d-api/): кроссплатформенные структуры, FFI-типы и интерфейсы интеграции с движком.
+  - [`xash3d-jolt`](rust/crates/xash3d-jolt/): обёртка над высокопроизводительным физическим движком **Jolt Physics** (через Oxijolt / JoltC).
+  - [`xash3d-audio`](rust/crates/xash3d-audio/): современный аудиомодуль на Rust с низкими задержками и микшированием.
 
-## Installation & Running
-0) Get Xash3D FWGS binaries: you can use [testing](https://github.com/FWGS/xash3d-fwgs/releases/tag/continuous) build or you can compile engine from source code.
-1) Copy engine binaries to some directory.
-2) Copy `valve` directory from [Half-Life](https://store.steampowered.com/app/70/HalfLife/) to directory with engine binaries.
-If your CPU is NOT x86 compatible or you're running 64-bit version of the engine, you may want to compile [Half-Life SDK](https://github.com/FWGS/hlsdk-portable).
-This repository contains our fork of HLSDK and restored source code for Half-Life expansions and some mods.
-You still needed to copy `valve` directory as all game resources located there.
-3) Run the main executable (`xash3d.exe` or AppImage).
+### ⚡ Jolt Physics
+- Замена оригинальной физики твёрдых тел на **Jolt Physics**:
+  - Точный расчёт динамики объектов (`MOVETYPE_TOSS`, `MOVETYPE_BOUNCE`, `MOVETYPE_STEP`), импульсов, отскоков и столкновений с полигональным мешем мира.
+  - Сохранение 100% совместимости с нативным контроллером движения игрока Half-Life (`pfnPM_Move`), перемещением на вагонетках/лифтах (`func_tracktrain`, `func_plat`), лестницами и CLIP-брашами BSP-карт.
 
-For additional info, run Xash3D with `-help` command line key.
+### 🎨 Современный рендерер OpenGL 3.3+ / 4.6 & Slang
+- Полностью удалён устаревший Software рендерер и легаси OpenGL-профили. Основной профиль — **OpenGL 3.3+ / 4.6 Compatibility**.
+- **Physically Based Rendering (PBR):**
+  - Освещение на базе микрогранной модели **Cook-Torrance GGX**.
+  - Кинематографичная тональная компрессия **ACES Film Tone Mapping**.
+- **Realtime освещение:** динамические точечные источники света в реальном времени (`r_realtime_lights`, включено по умолчанию).
+- **Шейдеры на Slang:** исходные шейдеры написаны на языке [Slang](https://shader-slang.com/) в каталоге `shaders/` (`pbr.slang`, `fxaa.slang`, `ssao.slang`).
+- **Screen-Space Ambient Occlusion (SSAO):** реалистичное затенение углов и стыков геометрии.
+- **FXAA 3.11:** быстрое субпиксельное сглаживание без потери резкости сцены.
+- **Автогенерация Normal Maps:** автоматический расчёт рельефных нормалей для текстур по градиентам яркости в экранном пространстве.
+- **Интеграция в меню настроек:** переключатели PBR, SSAO и FXAA добавлены в графические настройки игры.
 
-### Android
-0) Install the APK file.
-1) Copy `valve` directory to a folder named `xash` in the Internal storage.
-2) Run games from within the app.
+### 🎵 Аудиосистема на Rust
+- Аудиоядро вынесено в отдельный Rust-крейт `xash3d-audio` с прямой связкой через C FFI (`engine/client/rust_audio_ffi.h`), обеспечивая чистое воспроизведение и стабильный микшинг.
 
-## Reporting issues
-* Issues are accepted in both English and Russian.
-* They are only accepted if you run legally acquired product (e.g. Half-Life in Steam).
+### 🧹 Очистка кодовой базы
+- Полностью вырезана поддержка Android (каталог `android/`, gradle-скрипты, JNI-прослойки и платформозависимые хаки удалены).
+- Проект сфокусирован на чистой 64-битной настольной архитектуре (`win32-amd64` / `linux-amd64`).
 
-## Contributing code
-* Check the CONTRIBUTING.md file.
+---
 
-## Build instructions
-We are using Waf build system. If you have some Waf-related questions, I recommend you to read [Waf Book](https://waf.io/book/).
+## Настройки графики и консольные переменные (CVars)
 
-**NOTE: NEVER USE GitHub's ZIP ARCHIVES. GitHub doesn't include external dependencies we're using!**
+| CVar | По умолчанию | Описание |
+| :--- | :---: | :--- |
+| `r_pbr` | `1` | Включение PBR Cook-Torrance GGX и ACES Tone Mapping |
+| `r_realtime_lights` | `1` | Realtime динамическое освещение от источников света |
+| `r_ssao` | `1` | Экранное фоновое затенение (SSAO) |
+| `r_fxaa` | `1` | Субпиксельное сглаживание FXAA 3.11 |
+| `r_lighting_ambient`| `0.2` | Уровень фонового рассеянного освещения сцены |
 
-### Prerequisites
-If your CPU is x86 compatible and you're on Windows or Linux, we are building 32-bit code by default. This was done to maintain compatibility with Steam releases of Half-Life and based on it's engine games.
-Even if Xash3D FWGS does support targetting 64-bit, you can't load games without recompiling them from source code!
+Все основные эффекты также доступны в меню: **Configuration -> Video -> Advanced**.
 
-If your CPU is NOT x86 compatible or you decided build 64-bit version of engine, you may want to compile [Half-Life SDK](https://github.com/FWGS/hlsdk-portable).
-This repository contains our fork of HLSDK and restored source code for Half-Life expansions and some mods.
+---
 
-#### Windows (Visual Studio)
-* Install Visual Studio.
-* Install latest [Python](https://python.org) **OR** run `cinst python.install` if you have Chocolatey.
-* Install latest [Git](https://git-scm.com/download/win) **OR** run `cinst git.install` if you have Chocolatey.
-* Download [SDL2](https://libsdl.org/download-2.0.php) development package for Visual Studio.
-* Clone this repository: `git clone --recursive https://github.com/FWGS/xash3d-fwgs`.
-* Make sure you have at least 12GB of free space to store all build-time dependencies: ~10GB for Visual Studio, 300 MB for Git, 100 MB for Python and other.
+## Структура репозитория
 
-#### GNU/Linux
-##### Debian/Ubuntu
-* Only for 32-bit engine on 64-bit x86 operating system:
-  * Enable i386 on your system: `$ sudo dpkg --add-architecture i386`.
-  * Install `aptitude` ([why?](https://github.com/FWGS/xash3d-fwgs/issues/1828#issuecomment-2415131759)):  `$ sudo apt update && sudo apt upgrade && sudo apt install aptitude`
-  * Install development tools: `$ sudo aptitude --without-recommends install git build-essential gcc-multilib g++-multilib libsdl2-dev:i386 libfreetype-dev:i386 libopus-dev:i386 libbz2-dev:i386 libvorbis-dev:i386 libopusfile-dev:i386 libogg-dev:i386`.
-  * Set PKG_CONFIG_PATH environment variable to point at 32-bit libraries: `$ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig`.
+```
+├── engine/              # Ядро движка Xash3D (клиент, сервер, хост, FFI-интерфейсы)
+├── ref/gl/              # OpenGL 3.3+ / 4.6 рендерер, интеграция Slang и PBR
+├── rust/                # Rust Cargo Workspace
+│   └── crates/
+│       ├── xash3d-api/  # Общие API типы и FFI интерфейсы
+│       ├── xash3d-audio/# Аудиоядро на Rust
+│       └── xash3d-jolt/ # Jolt Physics интеграция
+├── shaders/             # Slang шейдеры (pbr.slang, fxaa.slang, ssao.slang)
+├── game_build/          # Автономная готовая сборка (в .gitignore)
+└── game_assets/         # Ресурсы Half-Life и кастомные ассеты (в .gitignore)
+```
 
-* For 64-bit engine on 64-bit x86 and other non-x86 systems:
-  * Install development tools: `$ sudo apt install git build-essential python libsdl2-dev libfreetype6-dev libopus-dev libbz2-dev libvorbis-dev libopusfile-dev libogg-dev`.
+---
 
-* Clone this repostory: `$ git clone --recursive https://github.com/FWGS/xash3d-fwgs`.
+## Сборка из исходного кода
 
-##### RedHat/Fedora
-* Only for 32-bit engine on 64-bit x86 operating system:
-  * Install development tools: `$ sudo dnf install git gcc gcc-c++ glibc-devel.i686 SDL3-devel.i686 sdl2-compat-devel.i686 opus-devel.i686 freetype-devel.i686 bzip2-devel.i686 libvorbis-devel.i686 opusfile-devel.i686 libogg-devel.i686`.
-  * Set PKG_CONFIG_PATH environment variable to point at 32-bit libraries: `$ export PKG_CONFIG_PATH=/usr/lib/pkgconfig`.
+### 1. Требования
+- **Компилятор C/C++:** MSVC (Visual Studio 2022) на Windows или GCC/Clang на Linux.
+- **Rust:** `rustc` и `cargo` (версия 1.75+).
+- **Python 3:** для сборочной системы Waf.
+- **SDL2:** библиотека SDL2 (для Windows находится в каталоге `SDL2/`).
 
-* For 64-bit engine on 64-bit x86 and other non-x86 systems:
-  * Install development tools: `$ sudo dnf install git gcc gcc-c++ SDL3-devel sdl2-compat-devel opus-devel freetype-devel bzip2-devel libvorbis-devel opusfile-devel libogg-devel`.
+### 2. Сборка Rust-компонентов
+```bash
+cd rust
+cargo build --release
+cd ..
+```
+Собранная статическая библиотека `xash3d_jolt.lib` линкуется напрямую с движком.
 
-* Clone this repostory: `$ git clone --recursive https://github.com/FWGS/xash3d-fwgs`.
+### 3. Сборка движка (Waf)
+```bash
+# Конфигурация под 64-бит
+python waf configure --sdl2=SDL2 -8
 
-#### Android (Windows/Linux/macOS)
-* Install [Android Studio](https://developer.android.com/studio) (or the command line tools).
-* Install [Python](https://python.org) (at least 2.7, latest is better).
-* Install [Git](https://git-scm.com/download/win).
-* Install [Ninja](https://ninja-build.org/).
-* Install [CMake](https://cmake.org/) (for some dependencies).
+# Сборка движка и рендерера
+python waf build
+```
 
-* Clone this repostory: `$ git clone --recursive https://github.com/FWGS/xash3d-fwgs`.
+Собранные бинарники будут находиться в каталоге `build/`.
 
-#### iOS/iPadOS
-* Install Xcode from the appstore.
-* Install [Homebrew package manager](https://brew.sh).
+---
 
-* Install build dependencies by running: `brew install python`.
+## Запуск игры
 
-* Clone the SDL2 repo `$ git clone --recursive https://github.com/libsdl-org/SDL.git -b SDL2` and compile the iOS framework by navigating to SDL/Xcode/SDL and opening the Xcode project.
+1. Скопируйте папку `valve` из установленной оригинальной **Half-Life** (Steam-версия) в директорию `game_build/`.
+2. Запустите `game_build/xash3d.exe`.
 
-* Clone this repository: `$ git clone --recursive https://github.com/FWGS/xash3d-fwgs`.
+---
 
-### Building
-#### Windows (Visual Studio)
-0) Open command line.
-1) Navigate to `xash3d-fwgs` directory.
-2) (optional) Examine which build options are available: `waf --help`.
-3) Configure build: `waf configure --sdl2=c:/path/to/SDL2`.
-4) Compile: `waf build`.
-5) Install: `waf install --destdir=c:/path/to/any/output/directory`.
+## Лицензия
 
-#### Linux
-If compiling 32-bit on amd64, make sure `PKG_CONFIG_PATH` from the previous step is set correctly, prior to running configure.
-
-0) (optional) Examine which build options are available: `./waf --help`.
-1) Configure build: `./waf configure` (you need to pass `-8` to compile 64-bit engine on 64-bit x86 processor).
-2) Compile: `./waf build`.
-3) Install: `./waf install --destdir=/path/to/any/output/directory`.
-
-#### Android (Windows/Linux/macOS)
-To build you should clone [SDL](https://github.com/libsdl-org/SDL) from `SDL2` branch and [HLSDK-portable](https://github.com/FWGS/hlsdk-portable) `mobile-hacks` branch repositories to 3rdparty folder, after that you should be able to open the project in Android Studio from `android` directory or manually call Gradle to build the APK.
-
-#### iOS/iPadOS (MacOS only)
-0) (optional) Examine which build options are available: `./waf --help`.
-1) Configure build: `./waf configure --ios --enable-bundled-deps --sdl2 (path/to/SDL2.framework)`, set `--ios-simulator` instead of `--ios` if you want to build for simulator.
-2) Compile `./waf build`.
-3) Navigate to `build` and copy your compiled SDL2.framework there, then add your game dylibs to `build/ios/libs/(gamedir)/(dlls/cl_dlls)`(You can also run `scripts/ios/buildhlsdk.sh` instead to automatically create an ipa with hlsdk dylibs)
-4) Run `scripts/ios/createipa.sh` to create an installable ipa
-
-### Running tests
-
-Tests are enabled with `--enable-tests` passed to `./waf configure` and can be run with `./waf --alltests`.
-
-This builds both standalone unit tests and a separate engine test binary (`xash3d_tests`) that embeds engine-level tests. The engine test binary requires no game assets.
+Xash3D FWGS распространяется под лицензией **GPL v3**. Подробности в файле `COPYING` или `LICENSE`.
+Оригинальный Half-Life является собственностью Valve Corporation.

@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "const.h"
 #include "pm_local.h"
 #include "studio.h"
+#include "rust_jolt_ffi.h"
 
 typedef struct moveclip_s
 {

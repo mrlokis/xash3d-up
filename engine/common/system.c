@@ -32,10 +32,7 @@ GNU General Public License for more details.
 #if XASH_POSIX
 #include <unistd.h>
 #include <signal.h>
-
-#if !XASH_ANDROID
 #include <pwd.h>
-#endif
 #endif
 
 #if XASH_WIN32
@@ -153,7 +150,7 @@ const char *Sys_GetCurrentUser( void )
 	sceAppUtilSystemParamGetString( SCE_SYSTEM_PARAM_ID_USERNAME, username, sizeof( username ) - 1 );
 	if( !COM_StringEmpty( username ))
 		return username;
-#elif XASH_POSIX && !XASH_ANDROID && !XASH_NSWITCH
+#elif XASH_POSIX && !XASH_NSWITCH
 	static string username;
 	struct passwd *pw = getpwuid( geteuid( ));
 
@@ -669,10 +666,5 @@ void *Sys_GetNativeObject( const char *obj )
 	if( ptr )
 		return ptr;
 
-	// Backend should consider that obj is case-sensitive
-#if XASH_ANDROID
-	ptr = Android_GetNativeObject( obj );
-#endif // XASH_ANDROID
-
-	return ptr;
+	return NULL;
 }

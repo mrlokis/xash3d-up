@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include "con_nprint.h"
 #include "pm_local.h"
 #include "platform/platform.h"
+#include "../rust_audio_ffi.h"
 
 // structure used for fading in and out client sound volume.
 struct
@@ -633,6 +634,8 @@ void S_StartSound( const vec3_t pos, int ent, int chan, sound_t handle, float fv
 
 	vol = bound( 0, fvol * 255, 255 );
 	if( pitch <= 1 ) pitch = PITCH_NORM; // Invasion issues
+
+	xash_rust_audio_play( sfx->name, ent, chan, pos, fvol, attn, (float)pitch );
 
 	if( flags & ( SND_STOP|SND_CHANGE_VOL|SND_CHANGE_PITCH ))
 	{
@@ -1458,6 +1461,7 @@ void GAME_EXPORT S_StopSound( int entnum, int channel, const char *soundname )
 {
 	sfx_t	*sfx;
 
+	xash_rust_audio_stop( entnum, channel );
 	if( !snd.initialized ) return;
 	sfx = S_FindName( soundname, NULL );
 	S_AlterChannel( entnum, channel, sfx, 0, 0, SND_STOP );
@@ -1470,6 +1474,7 @@ S_StopAllSounds
 */
 void S_StopAllSounds( qboolean ambient )
 {
+	xash_rust_audio_stop_all();
 	if( !snd.initialized ) return;
 	snd.total_channels = MAX_DYNAMIC_CHANNELS;	// no statics
 
@@ -1598,6 +1603,9 @@ void S_UpdateFrame( struct ref_viewpass_s *rvp )
 	VectorCopy( rvp->vieworigin, snd.origin );
 	AngleVectors( rvp->viewangles, snd.forward, snd.right, snd.up );
 	snd.entnum = rvp->viewentity; // can be camera entity too
+
+	xash_rust_audio_update_listener( snd.origin, snd.forward, snd.right, snd.up );
+	xash_rust_audio_set_volume( s_volume.value, s_musicvolume.value );
 }
 
 /*
@@ -2032,6 +2040,7 @@ qboolean S_Init( void )
 	S_StopAllSounds ( true );
 	S_InitSounds ();
 	VOX_Init ();
+	xash_rust_audio_init ();
 
 	return true;
 }
@@ -2070,5 +2079,6 @@ void S_Shutdown( void )
 	SX_Free ();
 
 	SNDDMA_Shutdown ();
+	xash_rust_audio_shutdown ();
 	Mem_FreePool( &sndpool );
 }

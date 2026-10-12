@@ -39,9 +39,6 @@ jobs:
 #            targetos: linux
 #            targetarch: e2k-8c
 #            cross: true
-          - os: ubuntu-latest
-            targetos: android
-            targetarch: multiarch
 #          - os: ubuntu-22.04
 #            targetos: motomagx
 #            targetarch: armv6

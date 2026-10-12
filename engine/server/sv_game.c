@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #include "const.h"
 #include "render_api.h"	// modelstate_t
 #include "ref_common.h" // decals
+#include "rust_jolt_ffi.h"
 
 // GameAPI functions declarations
 static int GAME_EXPORT pfnModelIndex( const char *m );
@@ -999,6 +1000,8 @@ void SV_FreeEdict( edict_t *pEdict )
 
 	// unlink from world
 	SV_UnlinkEdict( pEdict );
+
+	xash_rust_jolt_entity_destroy( NUM_FOR_EDICT( pEdict ));
 
 	SV_FreePrivateData( pEdict );
 
@@ -3025,7 +3028,7 @@ void SV_SetStringArrayMode( qboolean dynamic )
 #endif // !XASH_64BIT
 }
 
-#if XASH_AMD64 && XASH_LINUX && !XASH_ANDROID
+#if XASH_AMD64 && XASH_LINUX
 #define USE_MMAP 1
 #include <sys/mman.h>
 #endif

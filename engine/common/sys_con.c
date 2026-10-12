@@ -14,9 +14,6 @@ GNU General Public License for more details.
 */
 
 #include "common.h"
-#if XASH_ANDROID
-#include <android/log.h>
-#endif
 #include <string.h>
 #include <errno.h>
 #if XASH_IRIX
@@ -263,9 +260,6 @@ static void Sys_WriteLogfile( int fd, const char *logtime, size_t logtime_len, c
 
 static void Sys_PrintStdout( const char *logtime, size_t logtime_len, const char *msg, const char *stripped )
 {
-#if XASH_ANDROID && !XASH_DEDICATED
-	__android_log_write( ANDROID_LOG_INFO, "Xash", stripped );
-#endif // XASH_ANDROID && !XASH_DEDICATED
 
 #if TARGET_OS_IOS
 	void IOS_Log( const char * );

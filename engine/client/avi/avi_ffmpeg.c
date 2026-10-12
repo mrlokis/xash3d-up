@@ -664,8 +664,6 @@ static dll_info_t libavutil_info =
 {
 #if XASH_WIN32
 	.name = "avutil-" S( SUPPORTED_AVU_VERSION_MAJOR ) ".dll",
-#elif XASH_ANDROID
-	.name = "libavutil.so",
 #else
 	.name = "libavutil.so." S( SUPPORTED_AVU_VERSION_MAJOR ),
 #endif
@@ -677,8 +675,6 @@ static dll_info_t libavformat_info =
 {
 #if XASH_WIN32
 	.name = "avformat-" S( SUPPORTED_AVF_VERSION_MAJOR ) ".dll",
-#elif XASH_ANDROID
-	.name = "libavformat.so",
 #else
 	.name = "libavformat.so." S( SUPPORTED_AVF_VERSION_MAJOR ),
 #endif
@@ -690,8 +686,6 @@ static dll_info_t libavcodec_info =
 {
 #if XASH_WIN32
 	.name = "avcodec-" S( SUPPORTED_AVC_VERSION_MAJOR ) ".dll",
-#elif XASH_ANDROID
-	.name = "libavcodec.so",
 #else
 	.name = "libavcodec.so." S( SUPPORTED_AVC_VERSION_MAJOR ),
 #endif
@@ -703,8 +697,6 @@ static dll_info_t libswresample_info =
 {
 #if XASH_WIN32
 	.name = "swresample-" S( SUPPORTED_SWR_VERSION_MAJOR ) ".dll",
-#elif XASH_ANDROID
-	.name = "libswresample.so",
 #else
 	.name = "libswresample.so." S( SUPPORTED_SWR_VERSION_MAJOR ),
 #endif
@@ -716,8 +708,6 @@ static dll_info_t libswscale_info =
 {
 #if XASH_WIN32
 	.name = "swscale-" S( SUPPORTED_SWS_VERSION_MAJOR ) ".dll",
-#elif XASH_ANDROID
-	.name = "libswscale.so",
 #else
 	.name = "libswscale.so." S( SUPPORTED_SWS_VERSION_MAJOR ),
 #endif

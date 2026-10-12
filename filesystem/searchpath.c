@@ -81,13 +81,7 @@ static const fs_archive_t g_directory_archive =
 	.allow_exec = true,
 };
 
-#if XASH_ANDROID
-static const fs_archive_t g_android_archive =
-{
-	.type = SEARCHPATH_ANDROID_ASSETS,
-	.pfnAddArchive_Fullpath = FS_AddAndroidAssets_Fullpath
-};
-#endif
+
 
 static searchpath_t *FS_AddArchive_Fullpath( const fs_archive_t *archive, const char *file, int flags )
 {
@@ -211,12 +205,7 @@ void FS_AddGameDirectory( const char *dir, uint flags )
 
 	stringlistfreecontents( &list );
 
-#if XASH_ANDROID
-	// launcher assets must be mounted on top of engine assets, even if launcher runs base game
-	FS_AddArchive_Fullpath( &g_android_archive, dir, flags & ~FS_GAMEDIR_PATH );
-	if( FBitSet( flags, FS_GAMEDIR_PATH ))
-		FS_AddArchive_Fullpath( &g_android_archive, dir, flags );
-#endif
+
 
 	// add the directory to the search path
 	// (unpacked files have the priority over packed files)
@@ -284,25 +273,12 @@ int FS_CheckNastyPath( const char *path )
 FS_PathExecFlag
 
 guess if path is executable
-only implemented for Android for now
 ================
 */
 static uint32_t FS_PathExecFlag( const char *dir )
 {
-#if XASH_ANDROID
-	// on Android, where directories usually lie outside of internal app directory
-	// we can't reliably load libraries from
-	//
-	// currently, launcher passes /data/... path as rodir where downloaded game libraries
-	// are stored in. Catch that and mark such path as executable
-	if( !Q_strncmp( dir, "/data/", 6 ))
-		return FS_EXEC_PATH;
-	return 0;
-#else // !XASH_ANDROID
-	// FIXME: read noexec flag on *nix systems?
 	(void)dir;
 	return FS_EXEC_PATH;
-#endif // !XASH_ANDROID
 }
 
 /*
@@ -599,9 +575,7 @@ qboolean FS_InitStdio( qboolean unused_set_to_true, const char *rootdir, const c
 
 	FS_InitMemory();
 
-#if XASH_ANDROID
-	FS_InitAndroid();
-#endif
+
 
 	Q_strncpy( fs_rootdir, rootdir, sizeof( fs_rootdir ));
 	Q_strncpy( fs_gamedir, gamedir, sizeof( fs_gamedir ));

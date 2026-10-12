@@ -113,13 +113,9 @@ SUBDIRS = [
 	Subproject('utils/run-fuzzer', lambda x: x.env.ENABLE_FUZZER),
 
 	# disable only by engine feature, makes no sense to even parse subprojects in dedicated mode
-	Subproject('3rdparty/extras',       lambda x: x.env.CLIENT and x.env.DEST_OS != 'android'),
-	Subproject('3rdparty/nanogl',       lambda x: x.env.CLIENT and x.env.NANOGL),
-	Subproject('3rdparty/gl-wes-v2',    lambda x: x.env.CLIENT and x.env.GLWES),
-	Subproject('3rdparty/gl4es',        lambda x: x.env.CLIENT and x.env.GL4ES),
+	Subproject('3rdparty/extras',       lambda x: x.env.CLIENT),
 	Subproject('ref/common',            lambda x: x.env.CLIENT),
-	Subproject('ref/gl',                lambda x: x.env.CLIENT and (x.env.GL or x.env.NANOGL or x.env.GLWES or x.env.GL4ES or x.env.GLES3COMPAT)),
-	Subproject('ref/soft',              lambda x: x.env.CLIENT and x.env.SOFT),
+	Subproject('ref/gl',                lambda x: x.env.CLIENT and x.env.GL),
 	Subproject('ref/null',              lambda x: x.env.CLIENT and x.env.NULL),
 	Subproject('3rdparty/bzip2',        lambda x: x.env.CLIENT and not x.env.HAVE_SYSTEM_BZ2),
 	Subproject('3rdparty/mpg123',       lambda x: x.env.CLIENT and not x.env.HAVE_SYSTEM_MPG123),
@@ -129,7 +125,7 @@ SUBDIRS = [
 	Subproject('3rdparty/vorbis',       lambda x: x.env.CLIENT and (not x.env.HAVE_SYSTEM_VORBIS or not x.env.HAVE_SYSTEM_VORBISFILE)),
 	Subproject('3rdparty/opusfile',     lambda x: x.env.CLIENT and not x.env.HAVE_SYSTEM_OPUSFILE),
 	Subproject('3rdparty/maintui',      lambda x: x.env.CLIENT and x.env.TUI),
-	Subproject('3rdparty/mainui',       lambda x: x.env.CLIENT and x.env.DEST_OS != 'android'),
+	Subproject('3rdparty/mainui',       lambda x: x.env.CLIENT),
 
 	# engine is obligated to provide VGUI interface in 32-bit builds on Windows/Linux/Mac as shared library
 	# on platforms supported only by Xash3D FWGS, freevgui can be linked statically into client library
@@ -150,12 +146,7 @@ SUBDIRS = [
 ]
 
 REFDLLS = [
-	RefDll('soft', False, all_renderers = False),
 	RefDll('gl', True),
-	RefDll('gles1', False, 'NANOGL'),
-	RefDll('gles2', False, 'GLWES'),
-	RefDll('gl4es', False),
-	RefDll('gles3compat', False, 'GLES3COMPAT'),
 	RefDll('null', False),
 ]
 
@@ -330,13 +321,7 @@ def configure(conf):
 		conf.env.CONSOLE_SUBSYSTEM += ',5.01'
 
 	# Set default options for some platforms
-	if conf.env.DEST_OS == 'android':
-		conf.options.NANOGL           = True
-		conf.options.GLWES            = False # deprecated
-		conf.options.GL4ES            = True
-		conf.options.GLES3COMPAT      = True
-		conf.options.GL               = False
-	elif conf.env.IOS:
+	if conf.env.IOS:
 		conf.options.NANOGL           = True
 		conf.options.GLWES            = False # deprecated
 		conf.options.GL4ES            = False # doesn't compile on ios yet
@@ -499,7 +484,7 @@ def configure(conf):
 	if not conf.options.DEDICATED:
 		conf.env.SERVER = conf.options.ENABLE_DEDICATED
 		conf.env.CLIENT = True
-		conf.env.LAUNCHER = conf.env.DEST_OS not in ['android', 'nswitch', 'psvita', 'dos', 'emscripten'] and not conf.env.IOS and not conf.env.MAGX and not conf.env.STATIC_LINKING
+		conf.env.LAUNCHER = conf.env.DEST_OS not in ['nswitch', 'psvita', 'dos', 'emscripten'] and not conf.env.IOS and not conf.env.MAGX and not conf.env.STATIC_LINKING
 	else:
 		conf.env.SERVER = True
 		conf.env.CLIENT = False
@@ -537,18 +522,6 @@ def configure(conf):
 	elif conf.env.DEST_OS == 'psvita':
 		conf.check_cc(lib='vrtld')
 		conf.check_cc(lib='m')
-	elif conf.env.DEST_OS == 'android':
-		# maybe there is some better check?
-		if conf.find_program('termux-info', mandatory=False):
-			conf.env.TERMUX = True
-			conf.define('__TERMUX__', 1)
-
-		conf.check_cc(lib='dl')
-		conf.check_cc(lib='log')
-		if not conf.options.ANDROID_OPTS:
-			# if we're compiling on device itself
-			conf.check_cc(lib='m')
-		# otherwise LIB_M is defined by xcompile (as it might be libm_hard, depending on NDK configuration)
 	elif conf.env.DEST_OS == 'win32':
 		# MinGW defaults to msvcrt stdio, which lacks C99 conversions like %zu
 		# this also switches GCC format checking from ms_printf to gnu_printf
@@ -580,12 +553,7 @@ def configure(conf):
 
 	# set _FILE_OFFSET_BITS=64 for filesystems with 64-bit inodes
 	# must be set globally as it changes ABI
-	if conf.env.DEST_OS == 'android' and conf.env.DEST_SIZEOF_VOID_P == 4:
-		# Android in 32-bit mode don't have good enough large file support
-		# with our native API level
-		# https://android.googlesource.com/platform/bionic/+/HEAD/docs/32-bit-abi.md
-		pass
-	elif conf.env.DEST_OS == 'psvita':
+	if conf.env.DEST_OS == 'psvita':
 		# PSVita don't have large file support at all
 		pass
 	else:
@@ -611,8 +579,7 @@ def configure(conf):
 	prefer_bundled_opusfile = conf.options.BUILD_BUNDLED_DEPS
 	prefer_bundled_mpg123 = conf.options.BUILD_BUNDLED_DEPS
 	prefer_bundled_bzip2 = conf.options.BUILD_BUNDLED_DEPS
-	# zlib is a part of platform API on Android
-	prefer_bundled_zlib = conf.options.BUILD_BUNDLED_DEPS and conf.env.DEST_OS != 'android'
+	prefer_bundled_zlib = conf.options.BUILD_BUNDLED_DEPS
 
 	if conf.env.CLIENT:
 		if not prefer_bundled_ogg:

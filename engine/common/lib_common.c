@@ -156,7 +156,7 @@ static void COM_GenerateServerLibraryPath( const char *alt_dllname, char *out, s
 	Q_strncpy( out, GI->game_dll, size );
 #elif XASH_X86 && XASH_APPLE
 	Q_strncpy( out, GI->game_dll_osx, size );
-#elif XASH_X86 && XASH_LINUX && !XASH_ANDROID
+#elif XASH_X86 && XASH_LINUX
 	Q_strncpy( out, GI->game_dll_linux, size );
 	COM_StripExtension( out );
 

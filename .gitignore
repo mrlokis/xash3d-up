@@ -311,12 +311,9 @@ _Pvt_Extensions
 # QtCreator
 build-*
 
-# Android
-*.apk
-*.config
-*.creator
-*.includes
-*.files
+# Rust
+target/
+rust/target/
 
 # ios
 ios/cl_dlls/*
@@ -357,12 +354,6 @@ Taskfile.yml
 .idea/
 cmake-build-*
 
-# some Android-specific build stuff
-3rdparty/SDL
-3rdparty/hlsdk-portable
-3rdparty/ffmpeg
-!scripts/build-ninja.py
-
 # slop
 CLAUDE.md
 AGENTS.md
@@ -375,3 +366,11 @@ GEMINI.md
 .continue/
 .codeium/
 .github/copilot-instructions.md
+
+# Game assets
+game_assets/
+rust/target/
+game_build/
+hlsdk-portable/
+SDL2/
+

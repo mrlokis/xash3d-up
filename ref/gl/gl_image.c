@@ -958,6 +958,136 @@ static void GL_CheckTexImageError( gl_texture_t *tex )
 }
 
 /*
+================
+GL_GetFlatNormalMap
+
+Returns a 2x2 flat normal map pointing straight up (0, 0, 1) in tangent space.
+================
+*/
+GLuint GL_GetFlatNormalMap( void )
+{
+	static GLuint s_flatNormalTex = 0;
+	static qboolean s_in_creation = false;
+	if( s_flatNormalTex )
+		return s_flatNormalTex;
+	if( s_in_creation )
+		return 0;
+
+	s_in_creation = true;
+	byte flat_data[4 * 4] = {
+		128, 128, 255, 255,
+		128, 128, 255, 255,
+		128, 128, 255, 255,
+		128, 128, 255, 255
+	};
+	int texnum = GL_CreateTexture( "*flat_normal", 2, 2, flat_data, TF_NOMIPMAP | TF_CLAMP | TF_HAS_ALPHA );
+	if( texnum > 0 )
+	{
+		gl_texture_t *tex = R_GetTexture( texnum );
+		s_flatNormalTex = tex ? tex->texnum : 0;
+	}
+	s_in_creation = false;
+	return s_flatNormalTex;
+}
+
+/*
+================
+GL_GenerateNormalMapFromRGBA
+
+Calculates a tangent-space normal map using a 3x3 Sobel filter
+from RGBA luminance values.
+================
+*/
+GLuint GL_GenerateNormalMapFromRGBA( const char *src_name, int width, int height, const byte *rgba_data )
+{
+	if( !rgba_data || width < 4 || height < 4 )
+		return GL_GetFlatNormalMap();
+
+	size_t num_pixels = (size_t)width * height;
+	byte *normals = (byte *)Mem_Malloc( r_temppool, num_pixels * 4 );
+	if( !normals )
+		return GL_GetFlatNormalMap();
+
+	// Precompute luminance plane for quick neighborhood sampling
+	byte *luma = (byte *)Mem_Malloc( r_temppool, num_pixels );
+	if( !luma )
+	{
+		Mem_Free( normals );
+		return GL_GetFlatNormalMap();
+	}
+
+	for( size_t i = 0; i < num_pixels; i++ )
+	{
+		int r = rgba_data[i * 4 + 0];
+		int g = rgba_data[i * 4 + 1];
+		int b = rgba_data[i * 4 + 2];
+		luma[i] = (byte)((r * 77 + g * 150 + b * 29) >> 8);
+	}
+
+	#define GET_LUMA( x, y ) luma[(((y) + height) % height) * width + (((x) + width) % width)]
+
+	const float bump_scale = 2.5f;
+
+	for( int y = 0; y < height; y++ )
+	{
+		for( int x = 0; x < width; x++ )
+		{
+			// 3x3 Sobel neighborhood
+			int tl = GET_LUMA( x - 1, y - 1 );
+			int t  = GET_LUMA( x,     y - 1 );
+			int tr = GET_LUMA( x + 1, y - 1 );
+			int l  = GET_LUMA( x - 1, y );
+			int r  = GET_LUMA( x + 1, y );
+			int bl = GET_LUMA( x - 1, y + 1 );
+			int b  = GET_LUMA( x,     y + 1 );
+			int br = GET_LUMA( x + 1, y + 1 );
+
+			// Sobel dx and dy
+			float dx = (float)((tr + 2 * r + br) - (tl + 2 * l + bl)) / 255.0f;
+			float dy = (float)((bl + 2 * b + br) - (tl + 2 * t + tr)) / 255.0f;
+
+			// Normal vector N = normalize(-dx * scale, -dy * scale, 1.0)
+			float nx = -dx * bump_scale;
+			float ny = -dy * bump_scale;
+			float nz = 1.0f;
+			float len = sqrtf( nx * nx + ny * ny + nz * nz );
+			if( len > 0.00001f )
+			{
+				nx /= len;
+				ny /= len;
+				nz /= len;
+			}
+			else
+			{
+				nx = 0.0f; ny = 0.0f; nz = 1.0f;
+			}
+
+			size_t idx = ((size_t)y * width + x) * 4;
+			normals[idx + 0] = (byte)bound( 0, (int)((nx * 0.5f + 0.5f) * 255.0f), 255 );
+			normals[idx + 1] = (byte)bound( 0, (int)((ny * 0.5f + 0.5f) * 255.0f), 255 );
+			normals[idx + 2] = (byte)bound( 0, (int)((nz * 0.5f + 0.5f) * 255.0f), 255 );
+			normals[idx + 3] = 255;
+		}
+	}
+
+	#undef GET_LUMA
+
+	Mem_Free( luma );
+
+	char norm_name[256];
+	Q_snprintf( norm_name, sizeof( norm_name ), "*autonorm_%s", src_name );
+	int norm_texnum = GL_CreateTexture( norm_name, width, height, normals, TF_NOMIPMAP | TF_CLAMP );
+
+	Mem_Free( normals );
+	if( norm_texnum > 0 )
+	{
+		gl_texture_t *t = R_GetTexture( norm_texnum );
+		return t ? t->texnum : GL_GetFlatNormalMap();
+	}
+	return GL_GetFlatNormalMap();
+}
+
+/*
 ===============
 GL_UploadTexture
 
@@ -1094,6 +1224,19 @@ static qboolean GL_UploadTexture( gl_texture_t *tex, rgbdata_t *pic )
 
 	SetBits( tex->flags, TF_IMG_UPLOADED ); // done
 	tex->numMips /= numSides;
+
+	// Auto generate normal map if enabled and not already provided
+	if( r_autonormals.value && !tex->normal_texnum && tex->target == GL_TEXTURE_2D &&
+	    !IsLightMap( tex ) && !FBitSet( tex->flags, TF_NORMALMAP | TF_NOMIPMAP | TF_DEPTHMAP ) &&
+	    pic->type == PF_RGBA_32 && pic->buffer != NULL && tex->width >= 4 && tex->height >= 4 &&
+	    tex->name[0] != '*' && tex->name[0] != '#' )
+	{
+		tex->normal_texnum = GL_GenerateNormalMapFromRGBA( tex->name, tex->width, tex->height, pic->buffer );
+	}
+	else if( !tex->normal_texnum && tex->name[0] != '*' && tex->name[0] != '#' )
+	{
+		tex->normal_texnum = GL_GetFlatNormalMap();
+	}
 
 	return true;
 }

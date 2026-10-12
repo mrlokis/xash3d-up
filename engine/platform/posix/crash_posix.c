@@ -15,23 +15,12 @@ GNU General Public License for more details.
 
 #include "common.h"
 
-#if XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_ANDROID || XASH_LINUX || XASH_APPLE
+#if XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_LINUX || XASH_APPLE
 #include <signal.h>
 #include <sys/mman.h>
-#if XASH_ANDROID
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <android/log.h>
-#endif
 #include "library.h"
 #include "input.h"
 #include "crash.h"
-
-#if XASH_ANDROID
-static char crashlog_path[MAX_OSPATH];
-static char enginelog_path[MAX_OSPATH];
-#endif
 
 static qboolean have_libbacktrace = false;
 static char crash_message[8192];
@@ -50,10 +39,6 @@ static void Sys_Crash( int signal, siginfo_t *si, void *context )
 
 	ssize_t unused = write( STDERR_FILENO, crash_message, len );
 
-#if XASH_ANDROID
-	__android_log_write( ANDROID_LOG_FATAL, "Xash", crash_message );
-#endif
-
 	// now get log fd and write trace directly to log
 	int logfd = Sys_LogFileNo();
 	if( logfd >= 0 )
@@ -69,41 +54,6 @@ static void Sys_Crash( int signal, siginfo_t *si, void *context )
 	}
 #endif // HAVE_LIBBACKTRACE
 
-#if XASH_ANDROID
-	// also write to a dedicated crash report file the Java side picks up on next launch
-	if( crashlog_path[0] )
-	{
-		int crashfd = open( crashlog_path, O_WRONLY|O_CREAT|O_TRUNC, 0644 );
-		if( crashfd >= 0 )
-		{
-			write( crashfd, crash_message, len );
-			close( crashfd );
-		}
-	}
-
-	// make a copy of engine.log in staging directory
-	// TODO: dump log from console buffers, if -log not enabled
-	if( logfd >= 0 && enginelog_path[0] && lseek( logfd, 0, SEEK_SET ) == 0 )
-	{
-		int outfd = open( enginelog_path, O_WRONLY|O_CREAT|O_TRUNC, 0644 );
-		if( outfd >= 0 )
-		{
-			static char buf[8192];
-			while( 1 )
-			{
-				ssize_t n = read( logfd, buf, sizeof( buf ));
-				if( n <= 0 )
-					break;
-				if( write( outfd, buf, (size_t)n ) != n )
-					break;
-			}
-			close( outfd );
-		}
-	}
-
-	// JNI/SDL calls aren't safe from a signal handler on Android
-	_exit( 128 + signal );
-#else
 #if !XASH_DEDICATED
 	IN_SetMouseGrab( false );
 #endif
@@ -117,7 +67,6 @@ static void Sys_Crash( int signal, siginfo_t *si, void *context )
 		CL_Crashed();
 
 	Sys_Quit( "crashed" );
-#endif // XASH_ANDROID
 }
 
 static struct sigaction old_segv_act;
@@ -132,25 +81,6 @@ void Sys_SetupCrashHandler( const char *argv0 )
 		.sa_sigaction = Sys_Crash,
 		.sa_flags = SA_SIGINFO | SA_ONSTACK,
 	};
-
-#if XASH_ANDROID
-	const char *crashdir = getenv( "XASH3D_CRASH_DIR" );
-
-	if( !COM_StringEmptyOrNULL( crashdir ))
-	{
-		Q_snprintf( crashlog_path, sizeof( crashlog_path ), "%s/crash.log", crashdir );
-		Q_snprintf( enginelog_path, sizeof( enginelog_path ), "%s/engine.log", crashdir );
-	}
-
-	// unblock the engine/SDL_main thread just in case
-	sigset_t set;
-	sigemptyset( &set );
-	sigaddset( &set, SIGSEGV );
-	sigaddset( &set, SIGABRT );
-	sigaddset( &set, SIGBUS );
-	sigaddset( &set, SIGILL );
-	pthread_sigmask( SIG_UNBLOCK, &set, NULL );
-#endif
 
 #if HAVE_LIBBACKTRACE
 	have_libbacktrace = Sys_SetupLibbacktrace( argv0 );
@@ -170,4 +100,4 @@ void Sys_RestoreCrashHandler( void )
 	sigaction( SIGILL,  &old_ill_act, NULL );
 }
 
-#endif // XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_ANDROID || XASH_LINUX
+#endif // XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_LINUX

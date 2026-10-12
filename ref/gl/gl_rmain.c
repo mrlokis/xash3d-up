@@ -14,6 +14,7 @@ GNU General Public License for more details.
 */
 
 #include "gl_local.h"
+#include "gl_pbr.h"
 #include "xash3d_mathlib.h"
 #include "library.h"
 #include "beamdef.h"
@@ -988,6 +989,8 @@ void R_RenderScene( void )
 	R_DrawEntitiesOnList();
 
 	R_DrawWaterSurfaces();
+
+	GL_PBR_PostProcess( gpGlobals->width, gpGlobals->height, RI.rvp.vieworigin );
 }
 
 void R_GammaChanged( qboolean do_reset_gamma )

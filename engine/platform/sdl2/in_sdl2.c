@@ -200,7 +200,7 @@ void Platform_EnableTextInput( qboolean enable, int x, int y, int w, int h )
 		.h = h / scale_y,
 	};
 
-	// Android reads the rect when the on-screen keyboard is shown, so set it before starting
+	// On-screen keyboard reads the rect when shown, so set it before starting
 	SDL_SetTextInputRect( &rect );
 	SDL_StartTextInput();
 }

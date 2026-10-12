@@ -1,0 +1,13 @@
+[package]
+name = "xash3d-audio"
+version = "0.1.0"
+edition = "2021"
+authors = ["Xash3D FWGS Contributors"]
+description = "Rust Audio engine and spatial 3D mixer for Xash3D"
+
+[lib]
+name = "xash3d_audio"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+xash3d-api = { path = "../xash3d-api" }

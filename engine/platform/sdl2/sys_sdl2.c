@@ -115,9 +115,6 @@ void SDLash_Init( void )
 	// SDL_SetHint( SDL_HINT_WINDOWS_DPI_SCALING, "1" );
 #endif // XASH_WIN32
 
-	SDL_SetHint( SDL_HINT_ANDROID_BLOCK_ON_PAUSE, "0" );
-	SDL_SetHint( SDL_HINT_ANDROID_BLOCK_ON_PAUSE_PAUSEAUDIO, "0" );
-
 	// when launched through Steam (notably on Steam Deck) Steam Input hides the
 	// real controller and exposes a virtual gamepad without gyro/touchpad access
 	// undo the env-var filter and ignore the virtual pad instead
@@ -135,7 +132,6 @@ void SDLash_Init( void )
 
 	SDL_SetHint( SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0" );
 	SDL_SetHint( SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1" );
-	SDL_SetHint( SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1" );
 	SDL_SetHint( SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight" );
 
 #ifdef SDL_HINT_MOUSE_TOUCH_EVENTS

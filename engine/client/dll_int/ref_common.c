@@ -695,43 +695,13 @@ static void R_CollectRendererNames( void )
 #if XASH_REF_GL_ENABLED
 		"gl",
 #endif
-#if XASH_REF_NANOGL_ENABLED
-		"gles1",
-#endif
-#if XASH_REF_GLWES_ENABLED
-		"gles2",
-#endif
-#if XASH_REF_GL4ES_ENABLED
-		"gl4es",
-#endif
-#if XASH_REF_GLES3COMPAT_ENABLED
-		"gles3compat",
-#endif
-#if XASH_REF_SOFT_ENABLED
-		"soft",
-#endif
 	};
 
 	// ordering is important here too!
 	static const char *long_names[ARRAYSIZE( short_names )] =
 	{
 #if XASH_REF_GL_ENABLED
-		"OpenGL",
-#endif
-#if XASH_REF_NANOGL_ENABLED
-		"GLES1 (NanoGL)",
-#endif
-#if XASH_REF_GLWES_ENABLED
-		"GLES2 (gl-wes-v2)",
-#endif
-#if XASH_REF_GL4ES_ENABLED
-		"GL4ES",
-#endif
-#if XASH_REF_GLES3COMPAT_ENABLED
-		"GLES3 (gl2_shim)",
-#endif
-#if XASH_REF_SOFT_ENABLED
-		"Software",
+		"OpenGL (Core 3.3+ / PBR)",
 #endif
 	};
 
@@ -808,7 +778,7 @@ qboolean R_Init( void )
 
 		// do not show scary messages to user if renderer set in config cannot be loaded
 		// as game data could be copied from one platform to another, where this renderer
-		// might not be supported (ref_gl on Android for example)
+		// might not be supported (on this platform for example)
 		success = R_LoadRenderer( requested_cvar, !host_developer.value );
 	}
 

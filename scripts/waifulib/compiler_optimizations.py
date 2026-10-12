@@ -289,13 +289,12 @@ def get_optimization_flags(conf):
 		conf.msg('Guessed best -march', march)
 
 	if conf.env.COMPILER_CC in ['gcc', 'clang'] and conf.options.LIMITED_DEBUGINFO:
-		# probably not a good idea to do this, but it should save space on Android builds especially
-		# that are never going to be run under debugger, but we still want that readable fileline
+		# saves space on builds that are never going to be run under debugger, but we still want that readable fileline
 		# info in backtraces
 		# might enable this for release/fast/fastnative builds in the future
 		cflags = ['-gline-tables-only' if flag.startswith('-g') else flag for flag in cflags]
 
-	if conf.env.COMPILER_CC in ['gcc', 'clang'] and conf.env.DEST_OS not in ['android']:
+	if conf.env.COMPILER_CC in ['gcc', 'clang']:
 		# HLSDK by default compiles with these options under Linux
 		# no reason for us to not do the same
 		if conf.env.DEST_CPU == 'x86':

@@ -526,19 +526,8 @@ static bloomfilter_t ID_GenerateRawId( void )
 	int count = 0;
 
 #if XASH_LINUX
-#if XASH_ANDROID
-	{
-		const char *androidid = Android_GetAndroidID();
-		if( androidid && ID_VerifyHEX( androidid ) )
-		{
-			value |= BloomFilter_ProcessStr( androidid );
-			count ++;
-		}
-	}
-#else // !XASH_ANDROID
 	// most systemd/Linux distros expose this file
 	count += ID_ProcessFile( &value, "/etc/machine-id" );
-#endif // !XASH_ANDROID
 
 	count += ID_ProcessCPUInfo( &value );
 	count += ID_ProcessFiles( &value, "/sys/block", "device/cid" );
@@ -582,25 +571,12 @@ static uint ID_CheckRawId( bloomfilter_t filter )
 	int count = 0;
 
 #if XASH_LINUX
-#if XASH_ANDROID
-	{
-		const char *androidid = Android_GetAndroidID();
-		if( androidid && ID_VerifyHEX( androidid ) )
-		{
-			value = BloomFilter_ProcessStr( androidid );
-			count += (filter & value) == value;
-			value = 0;
-		}
-	}
-#else // !XASH_ANDROID
 	// most systemd/Linux distros expose this file
 	if( ID_ProcessFile( &value, "/etc/machine-id" ))
 	{
 		count += (filter & value) == value;
 		value = 0;
 	}
-
-#endif // !XASH_ANDROID
 	count += ID_CheckFiles( filter, "/sys/block", "device/cid" );
 	if( ID_ProcessCPUInfo( &value ) )
 		count += (filter & value) == value;
@@ -711,15 +687,7 @@ void ID_Init( void )
 	Cmd_AddRestrictedCommand( "testcpuinfo", ID_TestCPUInfo_f, "try read cpu serial" );
 #endif
 
-#if XASH_ANDROID && !XASH_DEDICATED
-	sscanf( Android_LoadID(), "%016"PRIX64, &id );
-	if( id )
-	{
-		id ^= SYSTEM_XOR_MASK;
-		ID_Check();
-	}
-
-#elif XASH_WIN32
+#if XASH_WIN32
 	{
 		CHAR szBuf[MAX_PATH];
 		ID_GetKeyData( HKEY_CURRENT_USER, "Software\\"XASH_ENGINE_NAME"\\", "xash_id", szBuf, MAX_PATH );
@@ -763,9 +731,7 @@ void ID_Init( void )
 	if( !id )
 		id = ID_GenerateRawId();
 
-#if XASH_ANDROID && !XASH_DEDICATED
-	Android_SaveID( va("%016"PRIX64, id^SYSTEM_XOR_MASK ) );
-#elif XASH_WIN32
+#if XASH_WIN32
 	{
 		CHAR Buf[MAX_PATH];
 		sprintf( Buf, "%016"PRIX64, id^SYSTEM_XOR_MASK );

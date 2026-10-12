@@ -90,7 +90,7 @@ static void IN_GyroMap( const vec3_t src, vec3_t dst )
 	if( orient == ORIENTATION_LANDSCAPE_FLIPPED )
 		orient_scale = -1.0f;
 
-	#if XASH_ANDROID || XASH_IOS
+	#if XASH_IOS
 		// In Landscape mode axes are swapped relative to natural (Portrait) orientation
 		// Y axis rotation becomes Pitch (up/down)
 		// X axis rotation becomes Yaw (left/right)

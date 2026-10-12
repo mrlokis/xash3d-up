@@ -48,10 +48,7 @@ static void SDLash_KeyEvent( const SDL_KeyboardEvent *key )
 {
 	int keynum = key->scancode;
 
-#if XASH_ANDROID
-	if( keynum == SDL_SCANCODE_VOLUMEUP || keynum == SDL_SCANCODE_VOLUMEDOWN )
-		host.force_draw_version_time = host.realtime + FORCE_DRAW_VERSION_TIME;
-#endif
+
 
 	if( host.textmode && key->down )
 	{

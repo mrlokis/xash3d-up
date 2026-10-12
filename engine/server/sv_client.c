@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "const.h"
 #include "server.h"
 #include "net_encode.h"
+#include "rust_jolt_ffi.h"
 
 // challenges are valid for two consecutive windows of this size (max lifetime ~10s).
 #define CHALLENGE_WINDOW_SECONDS 5
@@ -667,6 +668,7 @@ void SV_DropClient( sv_client_t *cl, qboolean crash )
 
 		if( cl->edict && cl->state == cs_spawned )
 		{
+			xash_rust_jolt_character_remove( NUM_FOR_EDICT( cl->edict ));
 			svgame.dllFuncs.pfnClientDisconnect( cl->edict );
 		}
 

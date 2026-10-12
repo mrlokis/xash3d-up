@@ -34,9 +34,9 @@ void Platform_Minimize_f( void )
 
 /*
 ========================
-Android_SwapBuffers
+DOS_SwapBuffers
 
-Update screen. Use native EGL if possible
+Update screen.
 ========================
 */
 void GL_SwapBuffers( void )

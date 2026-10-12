@@ -98,6 +98,7 @@ typedef struct gltexture_s
 
 	GLuint		target;		// glTarget
 	GLuint		texnum;		// gl texture binding
+	GLuint		normal_texnum;	// normal map texture binding
 	GLint		format;		// uploaded format
 	GLint		encode;		// using GLSL decoder
 	texFlags_t	flags;
@@ -811,6 +812,14 @@ extern convar_t r_ripple_updatetime;
 extern convar_t r_ripple_spawntime;
 extern convar_t r_large_lightmaps;
 extern convar_t r_scene_scale;
+extern convar_t r_pbr;
+extern convar_t r_realtime_lights;
+extern convar_t r_ssao;
+extern convar_t r_fxaa;
+extern convar_t r_autonormals;
+
+GLuint GL_GenerateNormalMapFromRGBA( const char *src_name, int width, int height, const byte *rgba_data );
+GLuint GL_GetFlatNormalMap( void );
 
 //
 // engine shared convars

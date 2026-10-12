@@ -67,7 +67,7 @@ void IOS_GetWindowInsets( void *window, float insets[4] );
 #endif
 
 // walks the direct dependency list of a game library image loaded from disk
-#if XASH_LIB == LIB_STATIC || XASH_ANDROID || XASH_IOS || XASH_PSVITA || XASH_NSWITCH
+#if XASH_LIB == LIB_STATIC || XASH_IOS || XASH_PSVITA || XASH_NSWITCH
 static inline qboolean Platform_CheckLibraryDirectDependency( const byte *data, size_t size, const char *depname )
 {
 	return false;
@@ -93,17 +93,6 @@ void SDLash_Init( void );
 void SDLash_Shutdown( void );
 void SDLash_NanoSleep( int nsec );
 qboolean SDLash_GyroIsAvailable( void );
-#endif
-
-#if XASH_ANDROID
-const char *Android_GetAndroidID( void );
-const char *Android_LoadID( void );
-void Android_SaveID( const char *id );
-void Android_Init( void );
-void *Android_GetNativeObject( const char *name );
-void Android_GetWindowInsets( float insets[4] );
-int Android_GetKeyboardHeight( void );
-void Android_Shutdown( void );
 #endif
 
 #if XASH_WIN32
@@ -155,9 +144,7 @@ static inline void Platform_Init( qboolean con_showalways )
 	SDLash_Init( );
 #endif
 
-#if XASH_ANDROID
-	Android_Init( );
-#elif XASH_NSWITCH
+#if XASH_NSWITCH
 	NSwitch_Init( );
 #elif XASH_PSVITA
 	PSVita_Init( );
@@ -227,7 +214,7 @@ static inline qboolean Platform_NanoSleep( int nsec )
 #endif
 }
 
-#if XASH_WIN32 || XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_ANDROID || XASH_LINUX || XASH_APPLE
+#if XASH_WIN32 || XASH_FREEBSD || XASH_NETBSD || XASH_OPENBSD || XASH_LINUX || XASH_APPLE
 void Sys_SetupCrashHandler( const char *argv0 );
 void Sys_RestoreCrashHandler( void );
 #else
@@ -242,12 +229,6 @@ static inline void Sys_RestoreCrashHandler( void )
 
 static inline qboolean Platform_LibraryExists( const char *name, qboolean gamedironly )
 {
-#if XASH_ANDROID
-	// when libs come from a separate APK (cs16client, tf15client, …) we can't see them
-	// from the VFS; trust the launcher.
-	if( !COM_StringEmptyOrNULL( getenv( "XASH3D_GAMELIBDIR" )))
-		return true;
-#endif
 	// FIXME: use FS_FindLibrary
 	return g_fsapi.FileExists( name, gamedironly );
 }
@@ -531,8 +512,6 @@ static inline void Platform_GetWindowInsets( void *window, float insets[4] )
 {
 #if XASH_IOS && XASH_SDL == 2
 	IOS_GetWindowInsets( window, insets );
-#elif XASH_ANDROID && XASH_SDL == 2
-	Android_GetWindowInsets( insets );
 #else
 	insets[0] = insets[1] = insets[2] = insets[3] = 0.0f;
 #endif

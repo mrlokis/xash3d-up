@@ -19,10 +19,18 @@ GNU General Public License for more details.
 #include "library.h"
 #include "voice.h"
 #include "pm_local.h"
+#include "rust_jolt_ffi.h"
 
 #if XASH_LOW_MEMORY != 2
 int SV_UPDATE_BACKUP = SINGLEPLAYER_BACKUP;
 #endif
+
+#if defined(_MSC_VER) && !defined(_DLL)
+#include <malloc.h>
+void * (__cdecl *__imp__aligned_malloc)(size_t, size_t) = _aligned_malloc;
+void   (__cdecl *__imp__aligned_free)(void *) = _aligned_free;
+#endif
+
 server_t		sv;	// local server
 server_static_t	svs;	// persistant server info
 svgame_static_t	svgame;	// persistant game info
@@ -568,6 +576,93 @@ void SV_FreeOldEntities( void )
 	for( ; ( ent = SV_EdictNum( svgame.numEntities - 1 )) && ent->free; svgame.numEntities-- );
 }
 
+static void SV_InitJoltWorldGeometry( void )
+{
+	if( !sv.worldmodel )
+		return;
+
+	int total_triangles = 0;
+	int total_vertices = sv.worldmodel->numvertexes;
+
+	for( int i = 0; i < sv.worldmodel->nummodelsurfaces; i++ )
+	{
+		msurface_t *surf = &sv.worldmodel->surfaces[sv.worldmodel->firstmodelsurface + i];
+		if( surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB) )
+			continue;
+		if( surf->numedges >= 3 )
+			total_triangles += (surf->numedges - 2);
+	}
+
+	if( total_triangles > 0 && total_vertices > 0 )
+	{
+		float *verts = (float *)Mem_Malloc( host.mempool, total_vertices * 3 * sizeof( float ));
+		uint32_t *indices = (uint32_t *)Mem_Malloc( host.mempool, total_triangles * 3 * sizeof( uint32_t ));
+
+		for( int i = 0; i < total_vertices; i++ )
+		{
+			verts[i * 3 + 0] = sv.worldmodel->vertexes[i].position[0];
+			verts[i * 3 + 1] = sv.worldmodel->vertexes[i].position[1];
+			verts[i * 3 + 2] = sv.worldmodel->vertexes[i].position[2];
+		}
+
+		int tri_idx = 0;
+		for( int i = 0; i < sv.worldmodel->nummodelsurfaces; i++ )
+		{
+			msurface_t *surf = &sv.worldmodel->surfaces[sv.worldmodel->firstmodelsurface + i];
+			if( surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB) )
+				continue;
+			if( surf->numedges < 3 )
+				continue;
+
+			int root_vert = -1;
+			int prev_vert = -1;
+
+			for( int e = 0; e < surf->numedges; e++ )
+			{
+				int edge_idx = sv.worldmodel->surfedges[surf->firstedge + e];
+				int v_idx;
+				if( FBitSet( sv.worldmodel->flags, MODEL_QBSP2 ))
+				{
+					if( edge_idx > 0 )
+						v_idx = sv.worldmodel->edges32[edge_idx].v[0];
+					else
+						v_idx = sv.worldmodel->edges32[-edge_idx].v[1];
+				}
+				else
+				{
+					if( edge_idx > 0 )
+						v_idx = sv.worldmodel->edges16[edge_idx].v[0];
+					else
+						v_idx = sv.worldmodel->edges16[-edge_idx].v[1];
+				}
+
+				if( e == 0 )
+				{
+					root_vert = v_idx;
+				}
+				else if( e == 1 )
+				{
+					prev_vert = v_idx;
+				}
+				else
+				{
+					indices[tri_idx * 3 + 0] = root_vert;
+					indices[tri_idx * 3 + 1] = prev_vert;
+					indices[tri_idx * 3 + 2] = v_idx;
+					tri_idx++;
+					prev_vert = v_idx;
+				}
+			}
+		}
+
+		Con_Reportf( "Jolt Physics: Loading %d vertices and %d triangles into Jolt static world mesh...\n", total_vertices, tri_idx );
+		xash_rust_jolt_level_init_mesh( verts, total_vertices, indices, tri_idx );
+
+		Mem_Free( verts );
+		Mem_Free( indices );
+	}
+}
+
 /*
 ================
 SV_ActivateServer
@@ -584,6 +679,8 @@ void SV_ActivateServer( int runPhysics )
 
 	if( !svs.initialized )
 		return;
+
+	SV_InitJoltWorldGeometry();
 
 	MSG_Init( &msg, "ActivateServer", msg_buf, sizeof( msg_buf ));
 
@@ -709,6 +806,7 @@ void SV_DeactivateServer( void )
 	SV_FreeEdicts ();
 
 	PM_ClearPhysEnts( svgame.pmove );
+	xash_rust_jolt_level_free();
 
 	SV_EmptyStringPool( true );
 	Mem_EmptyPool( svgame.stringspool );
@@ -757,6 +855,7 @@ qboolean SV_InitGame( qboolean silent )
 	}
 
 	// client frames will be allocated in SV_ClientConnect
+	xash_rust_jolt_init();
 	return true;
 }
 

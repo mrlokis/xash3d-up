@@ -10,11 +10,7 @@
 #include <linux/fb.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#if XASH_ANDROID
-#include <linux/kd.h>
-#else
 #include <sys/kd.h>
-#endif
 
 struct fb_s
 {
@@ -35,7 +31,7 @@ void Platform_Minimize_f( void )
 
 /*
 ========================
-Android_SwapBuffers
+GL_SwapBuffers
 
 Update screen. Use native EGL if possible
 ========================

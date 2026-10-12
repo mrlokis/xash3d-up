@@ -21,9 +21,6 @@ def configure(conf):
 	if conf.env.GL_STATIC:
 		conf.check(lib='GL')
 
-	if conf.env.DEST_OS2 == 'android':
-		conf.check_cc(lib='log')
-
 def build(bld):
 	libs = [ 'ref_common', 'engine_includes', 'werror', 'yy_thunks' ]
 	# on PSVita do not link any libraries that are already in the main executable, but add the includes target
@@ -40,26 +37,6 @@ def build(bld):
 			'enable':  bld.env.GL,
 			'libs':    ['GL'] if bld.env.GL_STATIC else [],
 			'defines': ['XASH_GL_STATIC=1'] if bld.env.GL_STATIC else [],
-		},
-		'ref_gles1': {
-			'enable':  bld.env.NANOGL,
-			'libs':    ['DL', 'nanogl', 'LOG'],
-			'defines': ['XASH_NANOGL=1'],
-		},
-		'ref_gles2': {
-			'enable':  bld.env.GLWES,
-			'libs':    ['DL', 'gl-wes-v2', 'LOG'],
-			'defines': ['XASH_WES=1'],
-		},
-		'ref_gl4es': {
-			'enable':  bld.env.GL4ES,
-			'libs':    ['DL', 'gl4es', 'LOG'],
-			'defines': ['XASH_GL_STATIC=1', 'XASH_GL4ES=1'],
-		},
-		'ref_gles3compat': {
-			'enable':  bld.env.GLES3COMPAT,
-			'libs':    [],
-			'defines': ['XASH_GLES3COMPAT=1'],
 		},
 	}
 

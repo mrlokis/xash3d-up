@@ -33,6 +33,7 @@ GNU General Public License for more details.
 #include "mod_local.h"
 #include "xash3d_mathlib.h"
 #include "input.h"
+#include "../server/rust_jolt_ffi.h"
 #include "enginefeatures.h"
 #include "render_api.h"	// decallist_t
 #include "tests.h"
@@ -46,8 +47,8 @@ static jmp_buf return_from_main_buf;
 ===============
 Host_ExitInMain
 
-On some platforms (e.g. Android) we can't exit with exit(3) as calling it would
-kill wrapper process (e.g. app_process) too early, before all resources would
+On some platforms we can't exit with exit(3) as calling it would
+kill wrapper process too early, before all resources would
 be freed, contexts released, files closed, etc, etc...
 
 To fix this, we create jmp_buf in Host_Main function, when jumping into with
@@ -883,7 +884,7 @@ static qboolean Host_CollectX86Libraries( ECommonLibraryType lib_type,
 	}
 #endif
 
-#if !( XASH_LINUX && !XASH_ANDROID && XASH_X86 )
+#if !( XASH_LINUX && XASH_X86 )
 	if( !COM_StringEmpty( lin_path ) && FS_FileExists( lin_path, true ))
 	{
 		if( has_any )
@@ -933,11 +934,6 @@ static void Host_CheckGameLibraries( void )
 		// if the user explicitly set a library path, trust them and skip the check
 		if( !COM_StringEmpty( libs[i].override ))
 			continue;
-
-#if XASH_ANDROID
-		if( libs[i].type == LIBRARY_CLIENT )
-			continue;
-#endif
 
 		if( libs[i].type == LIBRARY_SERVER )
 		{
@@ -1177,9 +1173,7 @@ int EXPORT Host_Main( int argc, char **argv, const char *progname, int bChangeGa
 	static double oldtime;
 	string exename;
 
-#if XASH_ANDROID
-	pChangeGame = NULL;
-#endif
+
 
 	if( setjmp( return_from_main_buf ))
 		return error_on_exit;
@@ -1385,6 +1379,7 @@ void Host_ShutdownWithReason( const char *reason )
 
 	SoundList_Shutdown();
 	Mod_Shutdown();
+	xash_rust_jolt_shutdown();
 	XRcon_Shutdown();
 	NET_Shutdown();
 	HTTP_Shutdown();

@@ -35,7 +35,6 @@ GNU General Public License for more details.
 #include "library.h"
 #include "filesystem.h"
 #include "server.h"
-#include "platform/android/lib_android.h"
 
 #ifdef XASH_NO_LIBDL
 void *dlsym( void *handle, const char *symbol )
@@ -67,7 +66,7 @@ int dladdr( const void *addr, Dl_info *info )
 }
 #endif // XASH_NO_LIBDL
 
-#if !XASH_APPLE && !XASH_ANDROID && !XASH_PSVITA && !XASH_NSWITCH
+#if !XASH_APPLE && !XASH_PSVITA && !XASH_NSWITCH
 /*
 =============================================================================
 
@@ -278,7 +277,7 @@ qboolean Platform_CheckLibraryDirectDependency( const byte *data, size_t size, c
 
 	return false;
 }
-#endif // !XASH_APPLE && !XASH_ANDROID && !XASH_PSVITA && !XASH_NSWITCH
+#endif // !XASH_APPLE && !XASH_PSVITA && !XASH_NSWITCH
 
 void *COM_LoadLibrary( const char *dllname, int build_ordinals_table, qboolean directpath )
 {
